@@ -4,6 +4,7 @@ import { useCrises, useDangerZones, useSOSSignals, useAlerts, useResolvedCount }
 import { Panel, StatCard, SeverityBadge, ConfidenceBar, Btn, LivePill, MapCanvas, ResolveModal, Spinner, EmptyState } from '@/components/UI'
 import { useToast } from '@/lib/ToastContext'
 import type { Page } from '@/types'
+import { Marker, Circle } from '@react-google-maps/api'
 
 interface Props { onNavigate: (p: Page) => void }
 
@@ -57,18 +58,25 @@ export default function OverviewPage({ onNavigate }: Props) {
         <Panel title="Live Situational Map" icon="◈" actions={<LivePill />} noPad>
           <MapCanvas height={380}>
             {/* Danger zones as red circles */}
-            {zones.map((z, i) => (
-              <div key={z.id} className="danger-zone" style={{
-                width: z.radiusKm * 80, height: z.radiusKm * 80,
-                left: `${25 + i * 22}%`, top: `${35 + i * 10}%`,
-                transform: 'translate(-50%,-50%)'
-              }} />
+            {zones.map((z) => (
+              <Circle
+                key={z.id}
+                center={{ lat: z.center.latitude, lng: z.center.longitude }}
+                radius={z.radiusKm * 1000}
+                options={{
+                  fillColor: 'rgba(255, 45, 85, 0.5)',
+                  strokeColor: 'rgba(255, 45, 85, 1)',
+                  strokeOpacity: 0.8,
+                  fillOpacity: 0.4,
+                }}
+              />
             ))}
             {/* SOS markers */}
-            {pendingSOS.slice(0, 4).map((s, i) => (
-              <div key={s.id} className="map-marker" style={{ left: `${20 + i * 20}%`, top: `${40 + i * 10}%` }}>
-                <div className="marker-sos">!</div>
-              </div>
+            {pendingSOS.map((s) => (
+              <Marker
+                key={s.id}
+                position={{ lat: s.location.latitude, lng: s.location.longitude }}
+              />
             ))}
             <div className="map-info">
               <div className="map-info-title">🗺 DANGER ZONES</div>
