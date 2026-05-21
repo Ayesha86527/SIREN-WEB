@@ -49,26 +49,27 @@ function AppContent() {
 
   if (!user) return <LoginPage />                  // ← new: gate everything behind login
 
-  return (
+return (
     <div className="flex h-screen bg-[#070C1E] text-white">
       <Sidebar
         current={currentPage}
         onNavigate={handleNavigate}
-        crisisCount={crises.length}
-        sosCount={signals.filter(s => s.status === 'pending').length}
+        crisisCount={crises?.length ?? 0}
+        sosCount={(signals?.filter(s => s.status === 'pending') ?? []).length}
       />
       <div className="flex-1 flex flex-col overflow-hidden">
         <TopNav />
-        <main className="flex-1 overflow-y-auto p-6">
+        <main className="flex-1 overflow-y-auto p-6" style={{ minHeight: 0 }}>
           <Routes>
-            <Route path="/" element={<OverviewPage />} />
+            <Route path="/" element={<OverviewPage onNavigate={handleNavigate} />} />
             <Route path="/crisis" element={<CrisisPage />} />
             <Route path="/terminal" element={<AgentTerminalPage />} />
             <Route path="/sos" element={<SOSPage />} />
             <Route path="/alerts" element={<AlertsPage />} />
             <Route path="/incidents" element={<IncidentsPage />} />
             <Route path="/agents" element={<AgentsPage />} />
-<Route path="/map" element={<MapPage />} />          </Routes>
+            <Route path="/map" element={<MapPage />} />
+          </Routes>
         </main>
       </div>
     </div>

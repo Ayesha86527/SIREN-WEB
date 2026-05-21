@@ -1,10 +1,9 @@
 import { useState } from 'react'
 import { callable } from '@/firebase/firebaseConfig'
-import { useCrises, useDangerZones, useSOSSignals, useAlerts, useResolvedCount } from '@/hooks/userFirestore'
+import { useCrises, useDangerZones, useSOSSignals, useAlerts, usePolls, useResolvedCount } from '@/hooks/userFirestore'
 import { Panel, StatCard, SeverityBadge, ConfidenceBar, Btn, LivePill, MapCanvas, ResolveModal, Spinner, EmptyState } from '@/components/ui/UI'
 import { useToast } from '@/context/ToastContext'
 import type { Page } from '@/types'
-import { Marker, Circle } from '@react-google-maps/api'
 
 interface Props { onNavigate: (p: Page) => void }
 
@@ -13,6 +12,7 @@ export default function OverviewPage({ onNavigate }: Props) {
   const zones = useDangerZones()
   const { signals } = useSOSSignals()
   const alerts = useAlerts()
+  const polls = usePolls()
   const resolvedCount = useResolvedCount()
   const { showToast } = useToast()
 
@@ -34,10 +34,10 @@ export default function OverviewPage({ onNavigate }: Props) {
     }
   }
 
-  const pendingSOS = signals.filter(s => s.status === 'pending')
+  const pendingSOS = signals?.filter(s => s.status === 'pending') ?? []
 
   return (
-    <div className="page active">
+    <div className="page active" style={{ minHeight: '100%', paddingBottom: '1rem' }}>
       <div className="page-header">
         <div>
           <div className="page-title">Command Overview</div>
@@ -54,67 +54,47 @@ export default function OverviewPage({ onNavigate }: Props) {
       </div>
 
       {/* Map + alerts feed */}
-      <div className="grid-65-35" style={{ marginBottom: 20 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 0.55fr', gap: '1rem', marginBottom: 20 }}>
         <Panel title="Live Situational Map" icon="◈" actions={<LivePill />} noPad>
           <MapCanvas height={380}>
-            {/* Danger zones as red circles */}
-            {zones.map((z) => (
-              <Circle
-                key={z.id}
-                center={{ lat: z.center.latitude, lng: z.center.longitude }}
-                radius={z.radiusKm * 1000}
-                options={{
-                  fillColor: 'rgba(255, 45, 85, 0.5)',
-                  strokeColor: 'rgba(255, 45, 85, 1)',
-                  strokeOpacity: 0.8,
-                  fillOpacity: 0.4,
-                }}
-              />
-            ))}
-            {/* SOS markers */}
-            {pendingSOS.map((s) => (
-              <Marker
-                key={s.id}
-                position={{ lat: s.location.latitude, lng: s.location.longitude }}
-              />
-            ))}
             <div className="map-info">
               <div className="map-info-title">🗺 DANGER ZONES</div>
-              {zones.slice(0, 3).map(z => (
-                <div key={z.id} className="map-info-row">
-                  <span>{z.crisisId ?? z.id.slice(0, 8)}</span>
-                  <span className="map-info-val">{z.radiusKm} km</span>
-                </div>
-              ))}
               {zones.length === 0 && <div style={{ color: 'var(--green-ok)', fontSize: '0.65rem' }}>No active zones</div>}
-            </div>
-            <div className="map-legend">
-              <div className="legend-item"><div className="legend-dot" style={{ background: 'rgba(255,45,85,0.6)' }} /> Danger Zone</div>
-              <div className="legend-item"><div className="legend-line" style={{ background: 'rgba(0,230,118,0.6)' }} /> Alt Route</div>
-              <div className="legend-item"><div className="legend-dot" style={{ background: 'var(--red-hot)' }} /> SOS Signal</div>
             </div>
           </MapCanvas>
         </Panel>
 
-        <Panel title="Live Alerts Feed" icon="📡" actions={<span className="badge badge-active">STREAMING</span>} noPad>
-          <div className="feed-list">
-            {alerts.length === 0 && <EmptyState icon="📡" msg="No active alerts" />}
-            {alerts.slice(0, 7).map(a => (
-              <div key={a.id} className="feed-item">
-                <div className="feed-dot" style={{ background: a.severity === 'high' ? 'var(--red-hot)' : a.severity === 'medium' ? 'var(--orange)' : 'var(--green-ok)' }} />
-                <div className="feed-content">
-                  <div className="feed-title">{a.title}</div>
-                  <div className="feed-msg">{a.message}</div>
-                  <div className="feed-time">{a.timestamp?.toDate().toLocaleTimeString() ?? '—'}</div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </Panel>
+<Panel title="Live Alerts Feed" icon="📡" actions={<span className="badge badge-active">STREAMING</span>} noPad>
+           <div className="feed-list">
+             {alerts.length === 0 && <EmptyState icon="📡" msg="No active alerts" />}
+             {alerts.slice(0, 7).map(a => {
+               const poll = a.pollId ? polls.find(p => p.id === a.pollId) : null
+               const totalVotes = poll ? poll.yesVotes + poll.noVotes : 0
+               const yesPercent = totalVotes > 0 ? Math.round((poll!.yesVotes / totalVotes) * 100) : 0
+               return (
+                 <div key={a.id} className="feed-item">
+                   <div className="feed-dot" style={{ background: a.severity === 'high' ? 'var(--red-hot)' : a.severity === 'medium' ? 'var(--orange)' : 'var(--green-ok)' }} />
+                   <div className="feed-content">
+                     <div className="feed-title">{a.title}</div>
+                     <div className="feed-msg">{a.message}</div>
+                     <div style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', marginTop: '4px' }}>
+                       📍 {a.city} • {a.timestamp?.toDate().toLocaleTimeString() ?? '—'}
+                     </div>
+                     {poll && (
+                       <div style={{ marginTop: '6px', fontSize: '0.65rem', color: 'var(--text-secondary)' }}>
+                         📊 {poll.question} • 👍 {poll.yesVotes} 👎 {poll.noVotes}
+                       </div>
+                     )}
+                   </div>
+                 </div>
+               )
+             })}
+           </div>
+         </Panel>
       </div>
 
       {/* Crisis snapshot + agent eval */}
-      <div className="grid-40-60">
+      <div style={{ display: 'grid', gridTemplateColumns: '0.65fr 1fr', gap: '1rem' }}>
         <Panel title="Active Crises" icon="⚠" actions={<button className="btn btn-ghost btn-xs" onClick={() => onNavigate('crises')}>View All →</button>}>
           {loadingCrises && <Spinner />}
           {!loadingCrises && crises.length === 0 && <EmptyState icon="✅" msg="No active crises" />}

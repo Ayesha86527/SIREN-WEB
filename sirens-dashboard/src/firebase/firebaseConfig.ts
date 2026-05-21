@@ -25,6 +25,8 @@ export const callable = {
   resolveReport:          httpsCallable<{ reportId: string }, { success: true }>(fns, 'resolveReport'),
   triggerImpactEvaluation:httpsCallable<{ crisisId: string }, { success: true }>(fns, 'triggerImpactEvaluation'),
   submitPollVote:         httpsCallable<{ pollId: string; vote: 'yes' | 'no' }, { success: true }>(fns, 'submitPollVote'),
+  dismissAlert:           httpsCallable<{ alertId: string }, { success: true }>(fns, 'dismissAlert'),
+  deleteCrisis:            httpsCallable<{ crisisId: string }, { success: true }>(fns, 'deleteCrisis'),
 }
 
 // ─── Shared arg types used above ────────────────────────────────────────────

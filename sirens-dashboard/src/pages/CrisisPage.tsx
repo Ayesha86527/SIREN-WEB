@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { callable } from '@/firebase/firebaseConfig'
 import { useCrises } from '@/hooks/userFirestore'
-import { Panel, SeverityBadge, ConfidenceBar, Btn, Spinner, EmptyState, ResolveModal } from '@/components/ui/UI'
+import { Panel, SeverityBadge, ConfidenceBar, Btn, Spinner, EmptyState, ResolveModal, DeactivateModal } from '@/components/ui/UI'
 import { useToast } from '@/context/ToastContext'
 
 export default function CrisesPage() {
@@ -10,6 +10,9 @@ export default function CrisesPage() {
   const [resolveId, setResolveId]     = useState<string | null>(null)
   const [resolveName, setResolveName] = useState('')
   const [resolving, setResolving]     = useState(false)
+  const [deactivateId, setDeactivateId] = useState<string | null>(null)
+  const [deactivateName, setDeactivateName] = useState('')
+  const [deactivating, setDeactivating]     = useState(false)
   const [filter, setFilter]           = useState<'all' | 'high' | 'medium' | 'low'>('all')
 
   async function confirmResolve() {
@@ -23,6 +26,20 @@ export default function CrisesPage() {
     } finally {
       setResolving(false)
       setResolveId(null)
+    }
+  }
+
+  async function confirmDeactivate() {
+    if (!deactivateId) return
+    setDeactivating(true)
+    try {
+      await callable.deleteCrisis({ crisisId: deactivateId })
+      showToast('Crisis Deleted ✅', `Crisis ${deactivateId} has been deleted.`, 'success')
+    } catch (e: any) {
+      showToast('Error', e.message ?? 'Failed', 'danger')
+    } finally {
+      setDeactivating(false)
+      setDeactivateId(null)
     }
   }
 
@@ -84,6 +101,10 @@ export default function CrisesPage() {
                 onClick={() => { setResolveId(c.id); setResolveName(`${c.crisisType} — ${c.areaName}`) }}>
                 ✓ Evaluate &amp; Resolve
               </Btn>
+              <Btn variant="ghost" size="sm"
+                onClick={() => { setDeactivateId(c.id); setDeactivateName(`${c.crisisType} — ${c.areaName}`) }}>
+                🗑 Delete
+              </Btn>
               <Btn variant="ghost" size="sm">📍 View on Map</Btn>
             </div>
           </div>
@@ -96,6 +117,13 @@ export default function CrisesPage() {
         onClose={() => setResolveId(null)}
         onConfirm={confirmResolve}
         loading={resolving}
+      />
+      <DeactivateModal
+        crisisId={deactivateId}
+        crisisName={deactivateName}
+        onClose={() => setDeactivateId(null)}
+        onConfirm={confirmDeactivate}
+        loading={deactivating}
       />
     </div>
   )

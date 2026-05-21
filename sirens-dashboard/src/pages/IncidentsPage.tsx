@@ -1,6 +1,7 @@
 import { useReports } from '@/hooks/userFirestore'
-import { Panel, SeverityBadge, Spinner, EmptyState, Btn } from '@/components/ui/UI'
-import { callable } from '@/firebase/firebaseConfig'
+import { Panel, Spinner, EmptyState, Btn } from '@/components/ui/UI'
+import { db } from '@/firebase/firebaseConfig'
+import { doc, deleteDoc } from 'firebase/firestore'
 
 export default function IncidentsPage() {
   const { reports, loading } = useReports()
@@ -19,31 +20,41 @@ export default function IncidentsPage() {
           {reports.map(r => (
             <div key={r.id} className="feed-item">
               <div className="feed-dot" style={{ background: r.status === 'active' ? 'var(--red-hot)' : 'var(--green-ok)' }} />
-              <div className="feed-content">
-                <div className="feed-title">{r.category} — {r.areaName}</div>
+              <div className="feed-content" style={{ flex: 1 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                  <div className="feed-title">{r.category} — {r.areaName}</div>
+                  {r.imageUrl && (
+                    <img 
+                      src={r.imageUrl} 
+                      alt="Incident" 
+                      style={{ width: 60, height: 60, objectFit: 'cover', borderRadius: 6, marginLeft: 12, border: '1px solid var(--border-subtle)' }}
+                    />
+                  )}
+                </div>
                 <div className="feed-msg">{r.description}</div>
-                <div className="feed-time">{r.timestamp?.toDate().toLocaleTimeString() ?? '—'}</div>
+                <div style={{ display: 'flex', gap: '12px', fontSize: '0.65rem', color: 'var(--text-secondary)', marginTop: '4px' }}>
+                  <span>📍 {r.city}</span>
+                  <span>🕒 {r.timestamp?.toDate().toLocaleTimeString() ?? '—'}</span>
+                </div>
                 <div style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', marginTop: '4px' }}>
                   User: {r.userId} · Status: {r.status.toUpperCase()}
                 </div>
+</div>
+              <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center' }}>
+                <Btn 
+                  variant="danger" 
+                  size="sm" 
+                  onClick={async () => {
+                    try {
+                      await deleteDoc(doc(db, 'reports', r.id))
+                    } catch (e) {
+                      console.error('Failed to delete report', e)
+                    }
+                  }}
+                >
+                  Delete
+                </Btn>
               </div>
-              {r.status === 'active' && (
-                <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center' }}>
-                  <Btn 
-                    variant="success" 
-                    size="sm" 
-                    onClick={async () => {
-                      try {
-                        await callable.resolveReport({ reportId: r.id })
-                      } catch (e) {
-                        console.error('Failed to resolve report', e)
-                      }
-                    }}
-                  >
-                    Mark as Handled
-                  </Btn>
-                </div>
-              )}
             </div>
           ))}
         </div>

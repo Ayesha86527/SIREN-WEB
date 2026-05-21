@@ -234,3 +234,39 @@ export function ResolveModal({ crisisId, crisisName, onClose, onConfirm, loading
     </div>
   )
 }
+
+// ─── Deactivate modal ───────────────────────────────────────────────────────
+interface DeactivateModalProps {
+  crisisId: string | null
+  crisisName: string
+  onClose: () => void
+  onConfirm: () => void
+  loading?: boolean
+}
+
+export function DeactivateModal({ crisisId, crisisName, onClose, onConfirm, loading }: DeactivateModalProps) {
+  if (!crisisId) return null
+
+  return (
+    <div className="modal-overlay open" onClick={(e) => e.target === e.currentTarget && onClose()}>
+      <div className="modal">
+        <button className="modal-close" onClick={onClose}>✕</button>
+        <div style={{ fontSize: '1.4rem', marginBottom: 8 }}>🗑️</div>
+        <div className="modal-title">Delete Crisis</div>
+        <div className="modal-sub">CRISIS: {crisisId} — {crisisName}</div>
+        
+        <div style={{ background: 'rgba(220,53,69,0.06)', border: '1px solid var(--border-subtle)', borderRadius: 8, padding: 14, fontSize: '0.78rem', color: 'var(--text-secondary)', lineHeight: 1.8 }}>
+          Deleting this crisis will:<br />
+          <span style={{ color: 'var(--red-hot)' }}>•</span> Permanently delete the crisis from the system<br />
+          <span style={{ color: 'var(--red-hot)' }}>•</span> Remove it from active monitoring immediately<br />
+          <span style={{ color: 'var(--red-hot)' }}>•</span> Not trigger any cleanup or resolution actions
+        </div>
+
+        <div className="modal-actions">
+          <Btn variant="ghost" onClick={onClose} style={{ flex: 1, justifyContent: 'center' }}>Cancel</Btn>
+          <Btn variant="danger" onClick={onConfirm} loading={loading} style={{ flex: 2, justifyContent: 'center' }}>🗑 Confirm Delete</Btn>
+        </div>
+      </div>
+    </div>
+  )
+}

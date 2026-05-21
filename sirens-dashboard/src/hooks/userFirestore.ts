@@ -13,7 +13,7 @@ import type {
   QuerySnapshot,
 } from 'firebase/firestore'
 import { db, callable } from '@/firebase/firebaseConfig'
-import type { Crisis, DangerZone, Resource, Alert, VerificationRequest, AgentTrace, SOSSignal, Report } from '@/types'
+import type { Crisis, DangerZone, Resource, Alert, Poll, VerificationRequest, AgentTrace, SOSSignal, Report } from '@/types'
 
 // ─── helper: map snapshot to typed array ─────────────────────────────────────
 function snap<T>(s: QuerySnapshot<DocumentData>): T[] {
@@ -25,11 +25,11 @@ export function useCrises() {
   const [crises, setCrises] = useState<Crisis[]>([])
   const [loading, setLoading] = useState(true)
   useEffect(() => {
-    const q = query(collection(db, 'crises'), where('status', '==', 'active'))
+    const q = query(collection(db, 'crises'))
     const unsub = onSnapshot(q, s => { setCrises(snap<Crisis>(s)); setLoading(false) })
     return unsub
   }, [])
-  return { crises, loading }
+  return { crises: crises || [], loading }
 }
 
 // ─── useDangerZones ───────────────────────────────────────────────────────────
@@ -37,9 +37,9 @@ export function useDangerZones() {
   const [zones, setZones] = useState<DangerZone[]>([])
   useEffect(() => {
     const q = query(collection(db, 'danger_zones'), where('active', '==', true))
-    return onSnapshot(q, s => setZones(snap<DangerZone>(s)))
+    return onSnapshot(q, s => setZones(snap<DangerZone>(s) || []))
   }, [])
-  return zones
+  return zones || []
 }
 
 // ─── useResources ─────────────────────────────────────────────────────────────
@@ -52,19 +52,26 @@ export function useResources() {
 }
 
 // ─── useAlerts ────────────────────────────────────────────────────────────────
-export function useAlerts(city = 'Karachi') {
+export function useAlerts() {
   const [alerts, setAlerts] = useState<Alert[]>([])
   useEffect(() => {
     const q = query(
       collection(db, 'alerts'),
-      where('city', '==', city),
-      where('active', '==', true),
       orderBy('timestamp', 'desc'),
-      limit(20)
+      limit(50)
     )
-    return onSnapshot(q, s => setAlerts(snap<Alert>(s)))
-  }, [city])
-  return alerts
+    return onSnapshot(q, s => setAlerts(snap<Alert>(s) || []))
+  }, [])
+  return alerts || []
+}
+
+// ─── usePolls ────────────────────────────────────────────────────────────────
+export function usePolls() {
+  const [polls, setPolls] = useState<Poll[]>([])
+  useEffect(() => {
+    return onSnapshot(collection(db, 'polls'), s => setPolls(snap<Poll>(s) || []))
+  }, [])
+  return polls || []
 }
 
 // ─── useVerificationRequests ──────────────────────────────────────────────────
@@ -91,7 +98,6 @@ export function useAgentTraces(maxLines = 80) {
   return traces
 }
 
-// ─── useSOSSignals ────────────────────────────────────────────────────────────
 // ─── useSOSSignals ────────────────────────────────────────────────────────────
 export function useSOSSignals() {
   const [signals, setSignals] = useState<SOSSignal[]>([])

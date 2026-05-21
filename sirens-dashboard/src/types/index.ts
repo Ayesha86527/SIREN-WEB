@@ -32,6 +32,16 @@ export interface Resource {
   available: boolean
 }
 
+export interface Poll {
+  id: string
+  question: string
+  alertId?: string
+  yesVotes: number
+  noVotes: number
+  createdAt?: Timestamp
+  updatedAt?: Timestamp
+}
+
 export interface Alert {
   id: string
   alertId?: string
@@ -42,6 +52,7 @@ export interface Alert {
   severity: 'low' | 'medium' | 'high'
   active: boolean
   timestamp?: Timestamp
+  pollId?: string
 }
 
 export interface VerificationRequest {
