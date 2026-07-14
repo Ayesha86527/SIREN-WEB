@@ -1,7 +1,5 @@
 import { BrowserRouter, Routes, Route, useNavigate, useLocation } from 'react-router-dom'
 
-import MapPage from './pages/MapPage';
-import OverviewPage from './pages/OverviewPage'
 import CrisisPage from './pages/CrisisPage'
 import AgentTerminalPage from './pages/AgentTerminalPage'
 import SOSPage from './pages/SOSPage'
