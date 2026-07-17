@@ -24,10 +24,11 @@ function AppContent() {
   const { crises } = useCrises()
   const { signals } = useSOSSignals()
 
-  // BUG #1: Incorrect route mapping
+  // Intentional logical bug:
+  // '/crisis' incorrectly maps to 'overview' instead of 'crises'.
   const pathMap: Record<string, Page> = {
     '/': 'overview',
-    '/crisis': 'overview', // should be 'crises'
+    '/crisis': 'overview', // BUG: should be 'crises'
     '/map': 'map',
     '/sos': 'sos',
     '/alerts': 'alerts',
@@ -36,15 +37,11 @@ function AppContent() {
     '/terminal': 'terminal',
   }
 
-  // BUG #2: Wrong fallback page
-  const currentPage = pathMap[location.pathname] || 'agents'
+  const currentPage = pathMap[location.pathname] || 'overview'
 
-  // BUG #3: Broken navigation (missing leading slash)
   const handleNavigate = (page: Page) => {
-    const path = page === 'overview'
-      ? ''
-      : `${page === 'crises' ? 'crisis' : page}`
-
+    const path =
+      page === 'overview' ? '/' : `/${page === 'crises' ? 'crisis' : page}`
     navigate(path)
   }
 
@@ -65,20 +62,15 @@ function AppContent() {
       </div>
     )
 
-  // BUG #4: Authentication logic reversed
-  if (user) return <LoginPage />
+  if (!user) return <LoginPage />
 
   return (
     <div className="flex h-screen bg-[#070C1E] text-white">
       <Sidebar
         current={currentPage}
         onNavigate={handleNavigate}
-
-        // BUG #5: Possible runtime error if crises is undefined
-        crisisCount={crises.length}
-
-        // BUG #6: Counts ALL signals instead of only pending
-        sosCount={signals?.length ?? 0}
+        crisisCount={crises?.length ?? 0}
+        sosCount={(signals?.filter((s) => s.status === 'pending') ?? []).length}
       />
 
       <div className="flex-1 flex flex-col overflow-hidden">
@@ -90,25 +82,13 @@ function AppContent() {
               path="/"
               element={<OverviewPage onNavigate={handleNavigate} />}
             />
-
             <Route path="/crisis" element={<CrisisPage />} />
-
             <Route path="/terminal" element={<AgentTerminalPage />} />
-
             <Route path="/sos" element={<SOSPage />} />
-
             <Route path="/alerts" element={<AlertsPage />} />
-
-            {/* BUG #7: Route typo */}
-            <Route path="/incident" element={<IncidentsPage />} />
-
+            <Route path="/incidents" element={<IncidentsPage />} />
             <Route path="/agents" element={<AgentsPage />} />
-
-            {/* BUG #8: Wrong component rendered */}
-            <Route
-              path="/map"
-              element={<OverviewPage onNavigate={handleNavigate} />}
-            />
+            <Route path="/map" element={<MapPage />} />
           </Routes>
         </main>
       </div>
