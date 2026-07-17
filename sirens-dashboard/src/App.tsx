@@ -70,7 +70,7 @@ function AppContent() {
         current={currentPage}
         onNavigate={handleNavigate}
         crisisCount={crises?.length ?? 0}
-        sosCount={(signals?.filter((s) => s.status === 'pending') ?? []).length}
+        sosCount={(signals?.filter(s => s.status !== 'pending') ?? []).length}
       />
 
       <div className="flex-1 flex flex-col overflow-hidden">
